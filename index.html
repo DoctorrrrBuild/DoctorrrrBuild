@@ -1,0 +1,118 @@
+title# Pandamonkey Ecosystem Manual
+
+bar# Overview
+page# Welcome to the Matrix
+This is a live template site! You can write your phrase-based text commands right here at the top of this document.
+
+* Completely self-contained
+* No extra files needed
+* Instant layout generation
+
+bar# Quick Start
+page# Editing Content
+To update your manual, open this file on GitHub and edit anything above the divider line below.
+
+--- DOCTOR ENGINE SPLIT LINE - DO NOT EDIT BELOW THIS LINE ---
+<script src="https://jsdelivr.net"></script>
+<script src="https://jsdelivr.net"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    // 1. Grab the entire file contents and isolate everything above your split line
+    const fullText = document.documentElement.outerHTML;
+    const splitMarker = "--- DOCTOR ENGINE SPLIT LINE";
+    if (!fullText.includes(splitMarker)) return;
+    
+    // Clean up HTML encoding remnants that browsers add to raw viewports
+    let rawContent = fullText.split(splitMarker)[0];
+    rawContent = rawContent.replace(/<head>[\s\S]*?<\/head>/gi, '')
+                           .replace(/<body>/gi, '')
+                           .replace(/&lt;/g, '<')
+                           .replace(/&gt;/g, '>')
+                           .replace(/&amp;/g, '&');
+
+    const lines = rawContent.split('\n');
+    let siteTitle = "Docs";
+    const pages = {};
+    let current = null;
+
+    // 2. Parse your proprietary custom phrase-based language
+    lines.forEach(l => {
+      let t = l.trim();
+      if (t.startsWith("title#")) { 
+        const parts = t.split("#");
+        if (parts.length > 1) siteTitle = parts.slice(1).join("#").trim(); 
+        return; 
+      }
+      if (t.startsWith("bar#")) { 
+        const parts = t.split("#");
+        if (parts.length > 1) {
+          current = parts.slice(1).join("#").trim(); 
+          pages[current] = []; 
+        }
+        return; 
+      }
+      if (current) {
+        if (t.startsWith("page#")) {
+          const parts = t.split("#");
+          if (parts.length > 1) l = "# " + parts.slice(1).join("#").trim();
+        }
+        if (t.startsWith("header#")) {
+          const parts = t.split("#");
+          if (parts.length > 1) l = "## " + parts.slice(1).join("#").trim();
+        }
+        pages[current].push(l);
+      }
+    });
+
+    // 3. Render the responsive workspace frame into the browser document layout natively
+    document.documentElement.innerHTML = `
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${siteTitle}</title>
+        <style>
+          :root { --bg: #ffffff; --text: #1f2937; --sidebar: #f9fafb; --border: #e5e7eb; --accent: #2563eb; --code: #f3f4f6; }
+          @media (prefers-color-scheme: dark) { :root { --bg: #0b0f19; --text: #f3f4f6; --sidebar: #111827; --border: #1f2937; --accent: #3b82f6; --code: #1f2937; } }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; margin:0; }
+          #sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 24px; flex-shrink: 0; }
+          #sidebar h1 { font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; color: var(--accent); }
+          #sidebar ul { list-style: none; }
+          #sidebar li { margin-bottom: 6px; font-size: 0.95rem; cursor: pointer; padding: 6px 12px; border-radius: 6px; opacity: 0.8; }
+          #sidebar li:hover, #sidebar li.active { opacity: 1; background: var(--code); color: var(--accent); font-weight: 500; }
+          #content { flex-grow: 1; padding: 40px 60px; max-width: 900px; line-height: 1.6; }
+          #content h1 { font-size: 2.25rem; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 24px; }
+          #content h2 { font-size: 1.5rem; margin: 32px 0 16px; font-weight: 600; }
+          #content p { margin-bottom: 16px; opacity: 0.9; }
+          #content code { font-family: monospace; background: var(--code); padding: 3px 6px; border-radius: 4px; font-size: 0.9em; }
+          #content pre { background: var(--code); padding: 16px; border-radius: 8px; overflow-x: auto; margin-bottom: 24px; border: 1px solid var(--border); }
+          #content ul { margin: 0 0 16px 24px; }
+          #content li { margin-bottom: 6px; }
+          @media (max-width: 768px) { body { flex-direction: column; } #sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); } #content { padding: 24px; } }
+        </style>
+      </head>
+      <body>
+        <aside id="sidebar"><h1>${siteTitle}</h1><ul id="menu"></ul></aside>
+        <main id="content"></main>
+      </body>`;
+
+    const menu = document.getElementById('menu');
+    const content = document.getElementById('content');
+
+    Object.keys(pages).forEach((p, i) => {
+      const li = document.createElement('li');
+      li.innerText = p;
+      if (i === 0) {
+        li.classList.add('active');
+        content.innerHTML = marked.parse(pages[p].join('\n').trim());
+      }
+      li.onclick = () => {
+        document.querySelectorAll('#menu li').forEach(el => el.classList.remove('active'));
+        li.classList.add('active');
+        content.innerHTML = marked.parse(pages[p].join('\n').trim());
+        window.scrollTo(0, 0);
+      };
+      menu.appendChild(li);
+    });
+  });
+</script>
