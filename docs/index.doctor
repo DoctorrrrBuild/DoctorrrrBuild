@@ -1,0 +1,91 @@
+title# Doctor Documentation
+
+nav# Home | #home
+nav# GitHub | https://github.com
+
+sidebar# Getting Started | #getting-started
+sidebar# Components | #components
+sidebar# Styling | #styling
+
+hero# Welcome to Doctor
+ desc# A single-file documentation language that compiles to clean HTML for GitHub Pages. No terminal required.
+
+h2# Getting Started
+
+p# Doctor is a **minimal** markup language designed specifically for documentation sites. Write your docs in `.doctor` files, commit them to GitHub, and they automatically compile to beautiful, responsive HTML.
+
+alert#tip
+ p# This entire workflow happens on GitHub. You never need to open a terminal or install anything.
+
+h2# How It Works
+
+list#
+- Fork the Doctor template repository
+- Edit `.doctor` files in the `docs/` folder directly on GitHub
+- Commit your changes — GitHub Actions compiles and deploys automatically
+- Your docs site goes live at `yourname.github.io/doctor`
+end#
+
+h2# Components
+
+table# Component | Syntax | Description
+ title | title# Name | Sets the page title
+ nav | nav# Label | #href | Top navigation link
+ sidebar | sidebar# Label | #href | Left sidebar link
+ hero | hero# Title + desc# | Large header section
+ heading | h1# h2# h3# | Section headings with anchors
+ paragraph | p# Text | Body text with formatting
+ code | code#lang ... end# | Syntax-highlighted code block
+ table | table# Cols... end# | Data table
+ list | list# ... end# | Bullet list
+ alert | alert#type + p# | Info/warning/success/tip callout
+ card | card# Title + desc# | Info card
+ grid | grid#N ... end# | Responsive card grid
+ divider | divider# | Horizontal rule
+ image | img# src | alt | Responsive image
+end#
+
+h2# Quick Example
+
+code#doctor
+title# My API Docs
+
+hero# API Reference
+ desc# Everything you need to integrate with our API.
+
+h2# Authentication
+
+p# All requests require a **Bearer token** in the Authorization header.
+
+code#bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://api.example.com/v1/users
+end#
+
+alert#warning
+ p# Keep your tokens secure. Never commit them to version control.
+
+h2# Endpoints
+
+table# Method | Endpoint | Description
+ GET | /users | List all users
+ POST | /users | Create a new user
+ GET | /users/:id | Get a specific user
+ DELETE | /users/:id | Delete a user
+end#
+end#
+
+h2# Features
+
+grid#3
+card# Zero Dependencies
+ desc# The compiler is a single Python file with no external packages.
+card# Dark Mode
+ desc# Automatically respects the user's system preference.
+card# Responsive
+ desc# Sidebar collapses on mobile. Tables scroll horizontally.
+end#
+
+divider#
+
+p# Ready to start? Fork this repo and edit `docs/index.doctor` to write your own documentation.
