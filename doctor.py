@@ -1,6 +1,82 @@
+#!/usr/bin/env python3
+"""
+Doctor — Fail-Proof Documentation Compiler
+https://github.com/DoctorrrrBuild/doctor
+
+Usage: python doctor.py [docs_dir] [out_dir]
+"""
 import re
+import sys
+import os
+import traceback
 from pathlib import Path
 
+# ==================== CONFIG ====================
+DOCS_DIR = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("docs")
+OUT_DIR = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("_site")
+FALLBACK_TITLE = "Doctor Documentation"
+BUILD_LOG = []
+
+def log(msg):
+    BUILD_LOG.append(msg)
+    print(msg)
+
+# ==================== FALLBACK CONTENT ====================
+DEFAULT_INDEX = """title# Welcome to Doctor
+
+nav# Home | #home
+nav# GitHub | https://github.com
+
+hero# Doctor
+ desc# Your documentation site is live. Edit this file at docs/index.doctor.
+
+h2# Getting Started
+
+p# This is a default page generated because no custom content was found. Replace this file with your own documentation.
+
+alert#info
+ p# Edit `docs/index.doctor` to customize this page.
+
+h2# Quick Syntax
+
+list#
+- `title# Page Title` — Sets the page title
+- `h2# Heading` — Section header
+- `p# Paragraph` — Body text with **bold** and *italic*
+- `code#lang` ... `end#` — Code block
+- `table# Col1 | Col2` ... `end#` — Data table
+- `list#` ... `end#` — Bullet list
+- `alert#info` + `p#` — Callout box
+end#
+
+p# Visit [the Doctor repo](https://github.com/DoctorrrrBuild/doctor) for full documentation.
+"""
+
+ERROR_PAGE = """title# Build Error
+
+hero# Something Went Wrong
+ desc# The documentation build encountered an error. Check the details below.
+
+h2# Error Details
+
+p# The compiler failed to generate your documentation. Common causes:
+
+list#
+- Missing `docs/` directory
+- No `.doctor` files found
+- Syntax error in a `.doctor` file
+- File permission issues
+end#
+
+h2# Build Log
+
+p# Review the build output in your GitHub Actions logs for specific error messages.
+
+alert#error
+ p# If this persists, check that your `.doctor` files follow the correct syntax. Every multi-line block must end with `end#`.
+"""
+
+# ==================== COMPILER ====================
 class Doctor:
     def __init__(self):
         self.components = []
@@ -13,7 +89,6 @@ class Doctor:
         i = 0
         while i < len(lines):
             line = lines[i].strip()
-
             if not line or line.startswith('//'):
                 i += 1
                 continue
@@ -285,36 +360,110 @@ class Doctor:
 </html>"""
 
 
-def compile_all():
-    docs_dir = Path('docs')
-    out_dir = Path('_site')
-    out_dir.mkdir(exist_ok=True)
-
-    for doctor_file in docs_dir.glob('*.doctor'):
-        with open(doctor_file, 'r', encoding='utf-8') as f:
+# ==================== FAIL-PROOF BUILD ====================
+def compile_file(filepath):
+    """Compile a single .doctor file, return (html, error)."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
             source = f.read()
-
         compiler = Doctor()
         html = compiler.parse(source)
+        return html, None
+    except Exception as e:
+        error_msg = f"Error in {filepath.name}: {str(e)}"
+        log(error_msg)
+        log(traceback.format_exc())
+        return None, error_msg
 
-        output_file = out_dir / doctor_file.with_suffix('.html').name
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(html)
 
-        print(f"Compiled: {doctor_file} -> {output_file}")
+def generate_error_page():
+    """Generate a fallback error page with build log."""
+    compiler = Doctor()
+    return compiler.parse(ERROR_PAGE + "\n\ncode#text\n" + "\n".join(BUILD_LOG) + "\nend#")
 
-    index_doctor = docs_dir / 'index.doctor'
-    if index_doctor.exists():
-        index_html = out_dir / 'index.html'
-        if not index_html.exists():
-            with open(index_doctor, 'r', encoding='utf-8') as f:
-                source = f.read()
-            compiler = Doctor()
-            html = compiler.parse(source)
+
+def compile_all():
+    """Main build with multiple fallback layers."""
+    log("=" * 50)
+    log("Doctor Build Starting")
+    log(f"Python version: {sys.version}")
+    log(f"Working directory: {Path.cwd()}")
+    log(f"Docs directory: {DOCS_DIR.absolute()}")
+    log(f"Output directory: {OUT_DIR.absolute()}")
+
+    # Layer 1: Ensure docs/ exists
+    if not DOCS_DIR.exists():
+        log(f"WARNING: {DOCS_DIR} not found. Creating it...")
+        DOCS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Layer 2: Ensure at least one .doctor file exists
+    doctor_files = list(DOCS_DIR.glob('*.doctor'))
+    if not doctor_files:
+        log(f"WARNING: No .doctor files found in {DOCS_DIR}. Creating default index.doctor...")
+        default_file = DOCS_DIR / 'index.doctor'
+        with open(default_file, 'w', encoding='utf-8') as f:
+            f.write(DEFAULT_INDEX)
+        doctor_files = [default_file]
+
+    # Layer 3: Create output directory
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Layer 4: Compile each file, skip failures
+    success_count = 0
+    fail_count = 0
+    compiled_files = []
+
+    for doctor_file in sorted(doctor_files):
+        log(f"Compiling: {doctor_file.name}")
+        html, error = compile_file(doctor_file)
+
+        if html:
+            output_file = OUT_DIR / doctor_file.with_suffix('.html').name
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(html)
+            log(f"  -> OK: {output_file}")
+            compiled_files.append(output_file)
+            success_count += 1
+        else:
+            log(f"  -> FAILED: {error}")
+            fail_count += 1
+
+    # Layer 5: Ensure index.html exists
+    index_html = OUT_DIR / 'index.html'
+    index_doctor = DOCS_DIR / 'index.doctor'
+
+    if not index_html.exists() and index_doctor.exists():
+        log("Creating index.html from index.doctor...")
+        html, error = compile_file(index_doctor)
+        if html:
             with open(index_html, 'w', encoding='utf-8') as f:
                 f.write(html)
-            print(f"Copied index: {index_doctor} -> {index_html}")
+            log(f"  -> OK: {index_html}")
+            compiled_files.append(index_html)
+        else:
+            log(f"  -> FAILED to create index.html")
+
+    # Layer 6: If nothing compiled, generate error page
+    if not compiled_files:
+        log("CRITICAL: No files compiled successfully. Generating error page...")
+        error_html = generate_error_page()
+        with open(index_html, 'w', encoding='utf-8') as f:
+            f.write(error_html)
+        log(f"  -> Created error page at {index_html}")
+
+    # Layer 7: Summary
+    log("=" * 50)
+    log(f"Build complete: {success_count} succeeded, {fail_count} failed")
+    log(f"Output files: {[f.name for f in compiled_files]}")
+    log(f"Output directory contents: {[f.name for f in OUT_DIR.iterdir()]}")
+
+    # Return appropriate exit code
+    if success_count == 0 and fail_count > 0:
+        log("ERROR: All builds failed.")
+        return 1
+    return 0
 
 
 if __name__ == '__main__':
-    compile_all()
+    exit_code = compile_all()
+    sys.exit(exit_code)
