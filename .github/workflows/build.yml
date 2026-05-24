@@ -3,8 +3,6 @@ name: Build Doctor Docs
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -28,37 +26,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Debug — List repo structure
+      - name: Build site
         run: |
-          echo "=== Repository Root ==="
-          ls -la
-          echo "=== docs/ folder ==="
-          ls -la docs/ 2>/dev/null || echo "docs/ does not exist yet"
-          echo "=== Python version ==="
-          python --version
-
-      - name: Compile Doctor files
-        id: compile
-        run: |
-          echo "=== Running doctor.py ==="
           python doctor.py
-        continue-on-error: true
-
-      - name: Fallback — Check if _site exists
-        if: steps.compile.outcome == 'failure'
-        run: |
-          echo "=== Compilation failed, checking state ==="
-          ls -la _site/ 2>/dev/null || echo "_site does not exist"
-          echo "=== Attempting recovery build ==="
-          mkdir -p _site
-          python doctor.py || echo "Recovery also failed"
 
       - name: Verify output
         run: |
-          echo "=== _site contents ==="
           ls -la _site/
-          echo "=== Checking for index.html ==="
-          test -f _site/index.html && echo "index.html exists" || echo "index.html MISSING"
+          test -f _site/index.html && echo "✓ index.html exists" || (echo "✗ MISSING" && exit 1)
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
