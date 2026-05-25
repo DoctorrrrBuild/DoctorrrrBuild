@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-Doctor → Markdown converter
-Transforms .doctor files to .md for Jekyll/GitHub Pages
+Doctor -> Markdown converter for Jekyll
 """
-import re
 import sys
 from pathlib import Path
 
@@ -11,41 +9,41 @@ DOCS_DIR = Path("docs")
 OUT_DIR = Path("_doctor_md")
 
 def convert_doctor_to_markdown(source):
-    """Convert Doctor syntax to Markdown + Jekyll frontmatter."""
-    lines = source.split('\n')
+    lines = source.split('
+')
     result = []
     i = 0
-    
+
     title = "Documentation"
     nav_items = []
     sidebar_items = []
-    
+
     while i < len(lines):
         line = lines[i].rstrip()
-        
+
         if not line.strip() or line.strip().startswith('//'):
             i += 1
             continue
-        
+
         if line.startswith('title#'):
             title = line[6:].strip()
             i += 1
             continue
-        
+
         if line.startswith('nav#'):
             parts = line[4:].strip().split('|')
             if len(parts) == 2:
-                nav_items.append(f"- name: {parts[0].strip()}\n  href: {parts[1].strip()}")
+                nav_items.append({'name': parts[0].strip(), 'href': parts[1].strip()})
             i += 1
             continue
-        
+
         if line.startswith('sidebar#'):
             parts = line[8:].strip().split('|')
             if len(parts) == 2:
-                sidebar_items.append(f"- name: {parts[0].strip()}\n  href: {parts[1].strip()}")
+                sidebar_items.append({'name': parts[0].strip(), 'href': parts[1].strip()})
             i += 1
             continue
-        
+
         if line.startswith('hero#'):
             hero_title = line[5:].strip()
             desc = ""
@@ -54,10 +52,12 @@ def convert_doctor_to_markdown(source):
                 i += 1
             result.append(f"# {hero_title}")
             if desc:
-                result.append(f"\n> {desc}\n")
+                result.append(f"
+> {desc}
+")
             i += 1
             continue
-        
+
         if line.startswith('h1#'):
             result.append(f"# {line[3:].strip()}")
             i += 1
@@ -70,24 +70,26 @@ def convert_doctor_to_markdown(source):
             result.append(f"### {line[3:].strip()}")
             i += 1
             continue
-        
+
         if line.startswith('p#'):
             text = line[2:].strip()
             result.append(text)
             i += 1
             continue
-        
+
         if line.startswith('code#'):
             lang = line[5:].strip() or 'text'
-            result.append(f"\n```{lang}")
+            result.append(f"
+```{lang}")
             i += 1
             while i < len(lines) and not lines[i].strip().startswith('end#'):
                 result.append(lines[i])
                 i += 1
-            result.append("```\n")
+            result.append("```
+")
             i += 1
             continue
-        
+
         if line.startswith('table#'):
             headers = [h.strip() for h in line[6:].strip().split('|')]
             result.append('| ' + ' | '.join(headers) + ' |')
@@ -102,7 +104,7 @@ def convert_doctor_to_markdown(source):
             result.append("")
             i += 1
             continue
-        
+
         if line.startswith('alert#'):
             type_ = line[6:].strip()
             emojis = {'info': 'ℹ️', 'warning': '⚠️', 'success': '✅', 'error': '❌', 'tip': '💡'}
@@ -117,7 +119,7 @@ def convert_doctor_to_markdown(source):
             result.append("")
             i += 1
             continue
-        
+
         if line.startswith('list#'):
             i += 1
             while i < len(lines) and not lines[i].strip().startswith('end#'):
@@ -128,18 +130,20 @@ def convert_doctor_to_markdown(source):
             result.append("")
             i += 1
             continue
-        
+
         if line.startswith('card#'):
             title = line[5:].strip()
             desc = ""
             if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
                 desc = lines[i + 1].strip()[5:].strip()
                 i += 1
-            result.append(f"**{title}**\n\n{desc}")
+            result.append(f"**{title}**
+
+{desc}")
             result.append("")
             i += 1
             continue
-        
+
         if line.startswith('grid#'):
             i += 1
             while i < len(lines) and not lines[i].strip().startswith('end#'):
@@ -150,18 +154,20 @@ def convert_doctor_to_markdown(source):
                     if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
                         desc = lines[i + 1].strip()[5:].strip()
                         i += 1
-                    result.append(f"**{title}**\n\n{desc}")
+                    result.append(f"**{title}**
+
+{desc}")
                     result.append("")
                 i += 1
             i += 1
             continue
-        
+
         if line.startswith('divider#'):
             result.append("---")
             result.append("")
             i += 1
             continue
-        
+
         if line.startswith('img#'):
             parts = line[4:].strip().split('|')
             src = parts[0].strip()
@@ -170,25 +176,35 @@ def convert_doctor_to_markdown(source):
             result.append("")
             i += 1
             continue
-        
+
         i += 1
-    
+
+    # Build Jekyll frontmatter with sidebar as YAML list
     frontmatter = ["---", f'title: "{title}"', "layout: doctor"]
-    if nav_items:
-        frontmatter.append("nav:")
-        frontmatter.extend(["  " + n for n in nav_items])
+
     if sidebar_items:
         frontmatter.append("sidebar:")
-        frontmatter.extend(["  " + s for s in sidebar_items])
-    frontmatter.append("---\n")
-    
-    return "\n".join(frontmatter + result)
+        for item in sidebar_items:
+            frontmatter.append(f"  - name: "{item['name']}"")
+            frontmatter.append(f"    href: "{item['href']}"")
+
+    if nav_items:
+        frontmatter.append("nav:")
+        for item in nav_items:
+            frontmatter.append(f"  - name: "{item['name']}"")
+            frontmatter.append(f"    href: "{item['href']}"")
+
+    frontmatter.append("---
+")
+
+    return "
+".join(frontmatter + result)
 
 
 def convert_all():
     DOCS_DIR.mkdir(exist_ok=True)
     OUT_DIR.mkdir(exist_ok=True)
-    
+
     doctor_files = list(DOCS_DIR.glob('*.doctor'))
     if not doctor_files:
         default = DOCS_DIR / 'index.doctor'
@@ -205,17 +221,16 @@ alert#info
  p# This is a default page generated because no content was found.
 """)
         doctor_files = [default]
-    
+
     for doctor_file in sorted(doctor_files):
         print(f"Converting: {doctor_file.name}")
         source = doctor_file.read_text(encoding='utf-8')
         markdown = convert_doctor_to_markdown(source)
-        
+
         output_file = OUT_DIR / doctor_file.with_suffix('.md').name
         output_file.write_text(markdown, encoding='utf-8')
         print(f"  -> {output_file}")
-    
-    # Copy index.md to root for Jekyll
+
     index_md = OUT_DIR / 'index.md'
     if index_md.exists():
         root_index = Path('index.md')
@@ -225,4 +240,5 @@ alert#info
 
 if __name__ == '__main__':
     convert_all()
-    print("\nDone. Markdown files ready for Jekyll.")
+    print("
+Done. Markdown files ready for Jekyll.")
