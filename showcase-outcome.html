@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Doctor Showcase</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+    .carousel-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .carousel-slide {
+      display: none;
+      animation: fadeIn 0.5s;
+    }
+    .carousel-slide.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .slide-header h2 {
+      font-size: 1.8em;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .slide-header p {
+      color: #888;
+      font-size: 0.95em;
+    }
+    .split-view {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .code-panel, .preview-panel {
+      background: #141414;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #222;
+    }
+    .panel-label {
+      background: #1a1a1a;
+      padding: 12px 20px;
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #666;
+      border-bottom: 1px solid #222;
+    }
+    .code-content {
+      padding: 24px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      font-size: 0.85em;
+      line-height: 1.7;
+      color: #c9c9c9;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .preview-content {
+      padding: 40px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 40px;
+    }
+    .nav-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: #252525;
+      border-color: #444;
+    }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #333;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .dot.active {
+      background: #fff;
+    }
+    /* Preview styles for each feature */
+    .preview-hero {
+      text-align: center;
+    }
+    .preview-hero h1 {
+      font-size: 2em;
+      margin-bottom: 12px;
+    }
+    .preview-hero p {
+      color: #888;
+      font-size: 1.1em;
+    }
+    .preview-sidebar {
+      display: flex;
+      gap: 20px;
+    }
+    .sidebar-nav {
+      width: 160px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .sidebar-nav a {
+      display: block;
+      color: #888;
+      text-decoration: none;
+      padding: 8px 0;
+      font-size: 0.85em;
+      border-bottom: 1px solid #222;
+    }
+    .sidebar-nav a:last-child { border-bottom: none; }
+    .sidebar-content {
+      flex: 1;
+    }
+    .sidebar-content h3 { margin-bottom: 8px; }
+    .sidebar-content p { color: #888; font-size: 0.9em; }
+    .preview-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .preview-table th, .preview-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #222;
+    }
+    .preview-table th {
+      color: #888;
+      font-weight: 500;
+      font-size: 0.8em;
+      text-transform: uppercase;
+    }
+    .preview-alert {
+      padding: 16px 20px;
+      border-radius: 8px;
+      border-left: 4px solid;
+      margin-bottom: 12px;
+    }
+    .alert-info { background: #0a1628; border-color: #3b82f6; }
+    .alert-warning { background: #1a1500; border-color: #eab308; }
+    .alert-success { background: #051a05; border-color: #22c55e; }
+    .preview-list ul {
+      list-style: none;
+      padding: 0;
+    }
+    .preview-list li {
+      padding: 10px 0;
+      padding-left: 24px;
+      position: relative;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .preview-list li:before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: #555;
+    }
+    .preview-code pre {
+      background: #0d0d0d;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #222;
+      overflow-x: auto;
+      font-family: 'SF Mono', monospace;
+      font-size: 0.8em;
+      line-height: 1.6;
+    }
+    .preview-code .keyword { color: #c678dd; }
+    .preview-code .string { color: #98c379; }
+    .preview-code .comment { color: #5c6370; }
+    .preview-card {
+      background: #1a1a1a;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid #222;
+    }
+    .preview-card h4 { margin-bottom: 8px; color: #fff; }
+    .preview-card p { color: #888; font-size: 0.9em; }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 768px) {
+      .split-view { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Doctor Showcase</h1>
+  <p class="subtitle">See the code. See the result. Simple.</p>
+
+  <div class="carousel-container">
+
+    <!-- Slide 1: Hero -->
+    <div class="carousel-slide active">
+      <div class="slide-header">
+        <h2>Hero Section</h2>
+        <p>Big title with a tagline</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">hero# Prism
+desc# We build things that work.</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-hero">
+              <h1>Prism</h1>
+              <p>We build things that work.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: Sidebar -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Sidebar Navigation</h2>
+        <p>Navigation links with names and URLs</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">sidebar# Getting Started | #start
+sidebar# Components | #components
+sidebar# API Reference | #api</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-sidebar">
+              <div class="sidebar-nav">
+                <a href="#start">Getting Started</a>
+                <a href="#components">Components</a>
+                <a href="#api">API Reference</a>
+              </div>
+              <div class="sidebar-content">
+                <h3>Page Content</h3>
+                <p>Your documentation content goes here alongside the sidebar.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Table -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Data Tables</h2>
+        <p>Structured data with headers and rows</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">table# Project | Year | Status
+Meridian | 2025 | Active
+Solstice | 2024 | Archived
+Aperture | 2023 | Completed
+end#</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-table">
+              <table>
+                <tr><th>Project</th><th>Year</th><th>Status</th></tr>
+                <tr><td>Meridian</td><td>2025</td><td>Active</td></tr>
+                <tr><td>Solstice</td><td>2024</td><td>Archived</td></tr>
+                <tr><td>Aperture</td><td>2023</td><td>Completed</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Alerts -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Alert Boxes</h2>
+        <p>Contextual messages with emoji indicators</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">alert# info
+p# This feature requires v2.0+
+
+alert# warning
+p# Breaking change in next release
+
+alert# success
+p# Deployment completed</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-alert alert-info">
+              <strong>ℹ️ INFO</strong>: This feature requires v2.0+
+            </div>
+            <div class="preview-alert alert-warning">
+              <strong>⚠️ WARNING</strong>: Breaking change in next release
+            </div>
+            <div class="preview-alert alert-success">
+              <strong>✅ SUCCESS</strong>: Deployment completed
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 5: Lists -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Bullet Lists</h2>
+        <p>Simple unordered lists</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">list#
+- Product design
+- Frontend engineering
+- Design systems
+- Deployment pipelines
+end#</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-list">
+              <ul>
+                <li>Product design</li>
+                <li>Frontend engineering</li>
+                <li>Design systems</li>
+                <li>Deployment pipelines</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6: Code Blocks -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Code Blocks</h2>
+        <p>Syntax-highlighted code snippets</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">code# python
+def hello():
+    print("Hello Doctor")
+    
+hello()
+end#</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-code">
+              <pre><span class="keyword">def</span> hello():
+    <span class="keyword">print</span>(<<span class="string">"Hello Doctor"</span>)
+    
+hello()</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 7: Cards -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Content Cards</h2>
+        <p>Title and description blocks</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">card# The Classic
+desc# Acetate frames, timeless design
+
+card# The Minimal
+desc# Titanium, featherlight build</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <div class="preview-grid">
+              <div class="preview-card">
+                <h4>The Classic</h4>
+                <p>Acetate frames, timeless design</p>
+              </div>
+              <div class="preview-card">
+                <h4>The Minimal</h4>
+                <p>Titanium, featherlight build</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 8: Divider -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Section Dividers</h2>
+        <p>Horizontal rule for separating content</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">h2# Section One
+p# Content here
+
+divider#
+
+h2# Section Two
+p# More content</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content">
+            <h3 style="margin-bottom: 8px;">Section One</h3>
+            <p style="color: #888; margin-bottom: 20px;">Content here</p>
+            <hr style="border: none; border-top: 1px solid #333; margin: 24px 0;">
+            <h3 style="margin-bottom: 8px;">Section Two</h3>
+            <p style="color: #888;">More content</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 9: Image -->
+    <div class="carousel-slide">
+      <div class="slide-header">
+        <h2>Images</h2>
+        <p>Embed images with alt text</p>
+      </div>
+      <div class="split-view">
+        <div class="code-panel">
+          <div class="panel-label">Doctor Code</div>
+          <div class="code-content">img# ./assets/hero.jpg|Hero banner</div>
+        </div>
+        <div class="preview-panel">
+          <div class="panel-label">Result</div>
+          <div class="preview-content" style="align-items: center; text-align: center;">
+            <div style="background: #1a1a1a; border-radius: 12px; padding: 40px; border: 2px dashed #333;">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+              <p style="color: #555; margin-top: 12px; font-size: 0.85em;">Hero banner</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav-buttons">
+    <button class="nav-btn" onclick="prevSlide()">← Previous</button>
+    <button class="nav-btn" onclick="nextSlide()">Next →</button>
+  </div>
+
+  <div class="dots" id="dots"></div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.carousel-slide');
+    const totalSlides = slides.length;
+
+    // Create dots
+    const dotsContainer = document.getElementById('dots');
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => goToSlide(i);
+      dotsContainer.appendChild(dot);
+    }
+
+    function showSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+      document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      showSlide((currentSlide + 1) % totalSlides);
+    }
+
+    function prevSlide() {
+      showSlide((currentSlide - 1 + totalSlides) % totalSlides);
+    }
+
+    function goToSlide(index) {
+      showSlide(index);
+    }
+
+    // Auto-advance every 8 seconds
+    setInterval(nextSlide, 8000);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    });
+  </script>
+</body>
+</html>
