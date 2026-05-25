@@ -1,0 +1,190 @@
+title# Doctor Language Guide
+
+nav# Home | #home
+nav# GitHub | https://github.com
+
+sidebar# What is Doctor? | #what-is-doctor
+sidebar# Quick Start | #quick-start
+sidebar# Syntax Guide | #syntax-guide
+sidebar# Components | #components
+sidebar# Tips | #tips
+
+hero# Doctor
+ desc# A single-file documentation language that compiles to clean HTML. No terminal. No dependencies. Just write and deploy.
+
+h2# What is Doctor?
+
+p# **Doctor** is a markup language designed for one purpose: creating beautiful documentation sites with zero friction. You write `.doctor` files, push them to GitHub, and they automatically compile to responsive HTML with dark mode support.
+
+alert#tip
+ p# This entire page was written in Doctor. You are looking at the output right now.
+
+h2# Quick Start
+
+p# You can have a live docs site in under 5 minutes without ever opening a terminal:
+
+list#
+- **Fork** the Doctor template repository on GitHub
+- **Edit** `.doctor` files in the `docs/` folder directly on GitHub
+- **Commit** your changes — GitHub Actions auto-compiles and deploys
+- **Your site is live** at `yourname.github.io/doctor`
+end#
+
+grid#3
+card# Fork & Edit
+ desc# Fork the template repo and edit .doctor files right on GitHub.
+card# Push & Build
+ desc# Every commit triggers GitHub Actions to compile your docs automatically.
+card# Live & Done
+ desc# Your site is live at yourname.github.io/repo in under a minute.
+end#
+
+h2# Syntax Guide
+
+p# Doctor is **line-based**. Every component starts with a name followed by `#`, then content. Multi-line blocks close with `end#`.
+
+code#doctor
+// This is a comment
+title# My Documentation
+
+hero# Welcome
+ desc# This is my docs site.
+
+h2# Getting Started
+p# Write docs in **Doctor** and deploy to GitHub Pages.
+
+code#python
+def hello():
+    return "Hello, Doctor!"
+end#
+end#
+
+h2# Components
+
+table# Component | Syntax | Description
+ title | title# Name | Sets the page title
+ nav | nav# Label | #href | Top navigation link
+ sidebar | sidebar# Label | #href | Left sidebar link
+ hero | hero# Title + desc# | Large header section
+ heading | h1# h2# h3# | Section headers with anchors
+ paragraph | p# Text | Body with **bold**, *italic*, `code`
+ code | code#lang ... end# | Syntax-highlighted code
+ table | table# Cols... end# | Styled data tables
+ list | list# ... end# | Bullet lists
+ alert | alert#type + p# | Info, warning, success, error, tip
+ card | card# Title + desc# | Info cards
+ grid | grid#N ... end# | Responsive card layouts
+ divider | divider# | Horizontal rule
+ image | img# src | alt | Responsive images
+end#
+
+h3# Headings
+
+p# Use `h1#`, `h2#`, and `h3#` for section headings. They automatically get anchor IDs for sidebar linking:
+
+code#doctor
+h1# Main Title
+h2# Section Heading
+h3# Subsection
+end#
+
+h3# Paragraphs
+
+p# The `p#` component supports inline Markdown formatting:
+
+code#doctor
+p# This is **bold text**, *italic text*, and `inline code`.
+p# You can also add [links](https://example.com).
+end#
+
+h3# Code Blocks
+
+p# Use `code#` followed by the language, then your code, then `end#`:
+
+code#javascript
+// Fetch user data from the API
+async function getUser(id) {
+    const response = await fetch(`/api/users/${id}`);
+    if (!response.ok) {
+        throw new Error('User not found');
+    }
+    return response.json();
+}
+end#
+
+h3# Tables
+
+p# Pipe-separated columns. First line is headers, subsequent lines are rows:
+
+code#doctor
+table# Feature | Status | Version
+ Dark mode | Done | v1.0
+ Mobile layout | Done | v1.0
+ Search | Planned | v2.0
+end#
+
+h3# Alerts
+
+p# Five types with distinct colors and icons:
+
+code#doctor
+alert#info
+ p# This is an info callout.
+
+alert#warning
+ p# Be careful with this step.
+
+alert#success
+ p# Operation completed successfully.
+
+alert#error
+ p# Something went wrong.
+
+alert#tip
+ p# Pro tip: you can combine multiple alerts.
+end#
+
+h3# Lists
+
+p# Dash-prefixed items inside a `list#` block:
+
+code#doctor
+list#
+- No dependencies to install
+- Works on any device with a browser
+- Auto-deploys on every commit
+- Dark mode included
+end#
+
+h3# Cards and Grids
+
+p# Cards are info boxes. Grids arrange them in columns (2, 3, or 4):
+
+code#doctor
+grid#3
+card# Fast
+ desc# Compiles in milliseconds.
+card# Clean
+ desc# Semantic HTML output.
+card# Portable
+ desc# One file, works everywhere.
+end#
+
+h2# Tips
+
+list#
+- **Comments** start with `//` and are ignored by the compiler
+- **Indentation** does not matter — Doctor is line-based
+- **Empty lines** between components are optional but improve readability
+- **Every** multi-line block must end with `end#` or the compiler will break
+- **Sidebar links** should match heading anchors (auto-generated from heading text)
+end#
+
+alert#warning
+ p# The most common mistake is forgetting to close a block with `end#`. Always check your `code#`, `table#`, `list#`, and `grid#` blocks.
+
+divider#
+
+p# Ready to start? Edit `docs/index.doctor` in your repo and replace this content with your own documentation.
+
+p# Made with [Doctor](https://github.com). Deployed on [GitHub Pages](https://pages.github.com).
