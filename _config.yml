@@ -1,0 +1,20 @@
+title: Doctor Documentation
+description: Documentation built with Doctor language
+
+# GitHub's default theme (lightweight, works everywhere)
+theme: minima
+
+markdown: kramdown
+highlighter: rouge
+
+exclude:
+  - docs/*.doctor
+  - doctor.py
+  - _doctor_md
+  - README.md
+  - LICENSE
+  - .gitignore
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
