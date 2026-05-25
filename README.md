@@ -703,4 +703,4 @@ Doctor is open source. Use it for personal projects, documentation, or anything 
 
 Built with Doctor. Published on GitHub Pages.
 
-*Built with Optician* 👓
+*Landing pages built with Optician* 👓
