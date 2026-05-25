@@ -23,14 +23,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Convert Doctor to Markdown
-        run: python doctor.py
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
@@ -39,6 +31,13 @@ jobs:
         with:
           source: .
           destination: ./_site
+
+      - name: Copy optician landing page
+        run: |
+          if [ -f optician.html ]; then
+            cp optician.html _site/index.html
+            echo "Copied optician.html to _site/index.html"
+          fi
 
       - name: Verify output
         run: |
