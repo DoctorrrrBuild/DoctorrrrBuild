@@ -200,11 +200,155 @@
         .main li {
             margin: 0.5rem 0;
         }
+        
+        /* Playground Styles */
+        .playground-section {
+            margin: 3rem 0;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card-bg);
+        }
+        .playground-header {
+            background: var(--sidebar-bg);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .playground-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        .playground-run {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .playground-run:hover {
+            background: #2563eb;
+        }
+        .playground-panes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 400px;
+        }
+        .playground-input {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .pane-label {
+            background: var(--code-bg);
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .playground-input textarea {
+            flex: 1;
+            border: none;
+            background: var(--bg);
+            color: var(--text);
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Consolas', 'SF Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            resize: none;
+            outline: none;
+        }
+        .playground-output {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+        .playground-output .output-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        .playground-output .output-content h1 {
+            font-size: 1.8rem;
+            margin: 0 0 0.5rem;
+            padding: 0;
+            border: none;
+        }
+        .playground-output .output-content h2 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 0.5rem;
+        }
+        .playground-output .output-content p {
+            margin: 0 0 1rem;
+            color: var(--muted);
+        }
+        .playground-output .output-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .playground-output .output-content th,
+        .playground-output .output-content td {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .playground-output .output-content th {
+            font-weight: 600;
+            background: var(--code-bg);
+        }
+        .playground-output .output-content blockquote {
+            border-left: 3px solid var(--primary);
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            background: var(--primary-light);
+        }
+        .playground-output .output-content ul {
+            margin: 1rem 0;
+            padding-left: 1.25rem;
+        }
+        .playground-output .output-content li {
+            margin: 0.4rem 0;
+        }
+        .playground-output .output-content pre {
+            background: var(--code-bg);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .playground-output .output-content code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.3rem;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        .playground-output .output-content hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1.5rem 0;
+        }
+        .playground-output .output-empty {
+            color: var(--muted);
+            font-style: italic;
+            text-align: center;
+            padding-top: 4rem;
+        }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main { margin-left: 0; padding: 1rem; }
             .main h1 { font-size: 1.75rem; }
             .nav-links .showcase-btn { display: none; }
+            .playground-panes { grid-template-columns: 1fr; }
+            .playground-input { border-right: none; border-bottom: 1px solid var(--border); }
         }
     </style>
 <base target="_blank">
@@ -232,7 +376,274 @@
         </aside>
         <main class="main">
             {{ content }}
+            
+            <!-- Doctor Playground -->
+            <div class="playground-section" id="doctor-playground">
+                <div class="playground-header">
+                    <h3>🩺 Doctor Playground</h3>
+                    <button class="playground-run" onclick="runDoctor()">▶ Run</button>
+                </div>
+                <div class="playground-panes">
+                    <div class="playground-input">
+                        <div class="pane-label">Doctor Code</div>
+                        <textarea id="doctor-input" placeholder="Type your Doctor code here...
+Example:
+title# My Page
+
+hero# Welcome
+desc# This is my site.
+
+h2# Features
+
+list#
+- Fast
+- Simple
+- Beautiful
+end#
+
+divider#
+
+p# Built with Doctor." spellcheck="false">title# My Page
+
+hero# Welcome
+desc# This is my site.
+
+h2# Features
+
+list#
+- Fast
+- Simple
+- Beautiful
+end#
+
+divider#
+
+p# Built with Doctor.</textarea>
+                    </div>
+                    <div class="playground-output">
+                        <div class="pane-label">Live Preview</div>
+                        <div class="output-content" id="doctor-output">
+                            <div class="output-empty">Click "Run" to see your Doctor code come to life</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
+
+    <script>
+        function runDoctor() {
+            const input = document.getElementById('doctor-input').value;
+            const output = document.getElementById('doctor-output');
+            
+            if (!input.trim()) {
+                output.innerHTML = '<div class="output-empty">Enter some Doctor code to get started</div>';
+                return;
+            }
+            
+            output.innerHTML = parseDoctor(input);
+        }
+        
+        function parseDoctor(code) {
+            const lines = code.split('\n');
+            let html = [];
+            let i = 0;
+            let inTable = false;
+            let inList = false;
+            let inCode = false;
+            let codeLang = '';
+            let codeLines = [];
+            
+            while (i < lines.length) {
+                let line = lines[i].trim();
+                
+                // Skip empty lines and comments
+                if (!line || line.startsWith('//')) {
+                    i++;
+                    continue;
+                }
+                
+                // Title
+                if (line.startsWith('title#')) {
+                    // Title goes to frontmatter, skip in body
+                    i++;
+                    continue;
+                }
+                
+                // Hero
+                if (line.startsWith('hero#')) {
+                    const title = escapeHtml(line.substring(5).trim());
+                    let desc = '';
+                    if (i + 1 < lines.length && lines[i + 1].trim().startsWith('desc#')) {
+                        desc = escapeHtml(lines[i + 1].trim().substring(5).trim());
+                        i++;
+                    }
+                    html.push(`<<h1>${title}</h1>`);
+                    if (desc) html.push(`<<p>${desc}</p>`);
+                    i++;
+                    continue;
+                }
+                
+                // Headings
+                if (line.startsWith('h1#')) {
+                    html.push(`<<h1>${escapeHtml(line.substring(3).trim())}</h1>`);
+                    i++;
+                    continue;
+                }
+                if (line.startsWith('h2#')) {
+                    html.push(`<<h2>${escapeHtml(line.substring(3).trim())}</h2>`);
+                    i++;
+                    continue;
+                }
+                if (line.startsWith('h3#')) {
+                    html.push(`<<h3>${escapeHtml(line.substring(3).trim())}</h3>`);
+                    i++;
+                    continue;
+                }
+                
+                // Paragraph
+                if (line.startsWith('p#')) {
+                    html.push(`<<p>${escapeHtml(line.substring(2).trim())}</p>`);
+                    i++;
+                    continue;
+                }
+                
+                // Code block
+                if (line.startsWith('code#')) {
+                    inCode = true;
+                    codeLang = escapeHtml(line.substring(5).trim()) || 'text';
+                    codeLines = [];
+                    i++;
+                    while (i < lines.length && !lines[i].trim().startsWith('end#')) {
+                        codeLines.push(escapeHtml(lines[i]));
+                        i++;
+                    }
+                    html.push(`<<pre><code class="language-${codeLang}">${codeLines.join('\n')}</code></pre>`);
+                    inCode = false;
+                    i++; // skip end#
+                    continue;
+                }
+                
+                // Table
+                if (line.startsWith('table#')) {
+                    const headers = line.substring(6).split('|').map(h => escapeHtml(h.trim()));
+                    html.push('<table>');
+                    html.push('<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>');
+                    i++;
+                    while (i < lines.length && !lines[i].trim().startsWith('end#')) {
+                        const row = lines[i].trim();
+                        if (row) {
+                            const cells = row.split('|').map(c => escapeHtml(c.trim()));
+                            html.push('<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>');
+                        }
+                        i++;
+                    }
+                    html.push('</table>');
+                    i++; // skip end#
+                    continue;
+                }
+                
+                // Alert
+                if (line.startsWith('alert#')) {
+                    const type = line.substring(6).trim();
+                    const emojis = {info:'ℹ️', warning:'⚠️', success:'✅', error:'❌', tip:'💡'};
+                    const emoji = emojis[type] || 'ℹ️';
+                    let text = '';
+                    if (i + 1 < lines.length && lines[i + 1].trim().startsWith('p#')) {
+                        text = escapeHtml(lines[i + 1].trim().substring(2).trim());
+                        i++;
+                    }
+                    html.push(`<<blockquote><strong>${emoji} ${type.toUpperCase()}</strong>: ${text}</blockquote>`);
+                    i++;
+                    continue;
+                }
+                
+                // List
+                if (line.startsWith('list#')) {
+                    html.push('<ul>');
+                    i++;
+                    while (i < lines.length && !lines[i].trim().startsWith('end#')) {
+                        const item = lines[i].trim();
+                        if (item.startsWith('-')) {
+                            html.push(`<<li>${escapeHtml(item.substring(1).trim())}</li>`);
+                        }
+                        i++;
+                    }
+                    html.push('</ul>');
+                    i++; // skip end#
+                    continue;
+                }
+                
+                // Card
+                if (line.startsWith('card#')) {
+                    const title = escapeHtml(line.substring(5).trim());
+                    let desc = '';
+                    if (i + 1 < lines.length && lines[i + 1].trim().startsWith('desc#')) {
+                        desc = escapeHtml(lines[i + 1].trim().substring(5).trim());
+                        i++;
+                    }
+                    html.push(`<<div style="background: var(--card-bg); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin: 1rem 0;">`);
+                    html.push(`<<h4>${title}</h4>`);
+                    if (desc) html.push(`<<p>${desc}</p>`);
+                    html.push('</div>');
+                    i++;
+                    continue;
+                }
+                
+                // Divider
+                if (line.startsWith('divider#')) {
+                    html.push('<hr>');
+                    i++;
+                    continue;
+                }
+                
+                // Image
+                if (line.startsWith('img#')) {
+                    const parts = line.substring(4).split('|');
+                    const src = escapeHtml(parts[0].trim());
+                    const alt = escapeHtml(parts[1] ? parts[1].trim() : '');
+                    html.push(`<<img src="${src}" alt="${alt}" style="max-width: 100%; border-radius: 8px;">`);
+                    i++;
+                    continue;
+                }
+                
+                // Sidebar (skip in playground - it's layout)
+                if (line.startsWith('sidebar#')) {
+                    i++;
+                    continue;
+                }
+                
+                // Grid (skip complex layout for now)
+                if (line.startsWith('grid#')) {
+                    i++;
+                    while (i < lines.length && !lines[i].trim().startsWith('end#')) {
+                        i++;
+                    }
+                    i++;
+                    continue;
+                }
+                
+                i++;
+            }
+            
+            return html.join('\n');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', runDoctor);
+        
+        // Ctrl+Enter to run
+        document.getElementById('doctor-input').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                runDoctor();
+            }
+        });
+    </script>
 </body>
 </html>
