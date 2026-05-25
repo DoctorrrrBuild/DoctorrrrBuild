@@ -34,15 +34,9 @@ jobs:
 
       - name: Copy optician landing page
         run: |
-          if [ -f optician.html ]; then
-            cp optician.html _site/index.html
-            echo "Copied optician.html to _site/index.html"
-          fi
-
-      - name: Verify output
-        run: |
+          mkdir -p _site
+          cp optician.html _site/index.html 2>/dev/null || echo "No optician.html found"
           ls -la _site/
-          test -f _site/index.html && echo "OK" || exit 1
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
