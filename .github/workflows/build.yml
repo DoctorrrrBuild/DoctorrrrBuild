@@ -40,10 +40,14 @@ jobs:
           source: .
           destination: ./_site
 
-      - name: Copy optician landing page
+      - name: Ensure root index.html exists
         run: |
           mkdir -p _site
-          cp index.html _site/index.html 2>/dev/null || echo "No index.html found"
+          if [ -f index.html ]; then
+            cp index.html _site/index.html
+            echo "Copied custom index.html"
+          fi
+          ls -la _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
