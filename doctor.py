@@ -1,244 +1,199 @@
-#!/usr/bin/env python3
-"""
-Doctor -> Markdown converter for Jekyll
-"""
 import sys
 from pathlib import Path
 
 DOCS_DIR = Path("docs")
 OUT_DIR = Path("_doctor_md")
 
-def convert_doctor_to_markdown(source):
-    lines = source.split('
-')
-    result = []
+def convert_file(filepath):
+    lines = filepath.read_text(encoding="utf-8").splitlines()
+    out = []
     i = 0
-
     title = "Documentation"
-    nav_items = []
-    sidebar_items = []
+    sidebar = []
 
     while i < len(lines):
-        line = lines[i].rstrip()
-
-        if not line.strip() or line.strip().startswith('//'):
+        line = lines[i].strip()
+        if not line or line.startswith("//"):
             i += 1
             continue
 
-        if line.startswith('title#'):
+        if line.startswith("title#"):
             title = line[6:].strip()
             i += 1
             continue
 
-        if line.startswith('nav#'):
-            parts = line[4:].strip().split('|')
+        if line.startswith("sidebar#"):
+            parts = line[8:].split("|")
             if len(parts) == 2:
-                nav_items.append({'name': parts[0].strip(), 'href': parts[1].strip()})
+                sidebar.append((parts[0].strip(), parts[1].strip()))
             i += 1
             continue
 
-        if line.startswith('sidebar#'):
-            parts = line[8:].strip().split('|')
-            if len(parts) == 2:
-                sidebar_items.append({'name': parts[0].strip(), 'href': parts[1].strip()})
-            i += 1
-            continue
-
-        if line.startswith('hero#'):
-            hero_title = line[5:].strip()
-            desc = ""
-            if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
-                desc = lines[i + 1].strip()[5:].strip()
+        if line.startswith("hero#"):
+            out.append("# " + line[5:].strip())
+            if i + 1 < len(lines) and lines[i+1].strip().startswith("desc#"):
+                out.append("> " + lines[i+1].strip()[5:].strip())
                 i += 1
-            result.append(f"# {hero_title}")
-            if desc:
-                result.append(f"
-> {desc}
-")
             i += 1
             continue
 
-        if line.startswith('h1#'):
-            result.append(f"# {line[3:].strip()}")
+        if line.startswith("h1#"):
+            out.append("# " + line[3:].strip())
             i += 1
             continue
-        if line.startswith('h2#'):
-            result.append(f"## {line[3:].strip()}")
+        if line.startswith("h2#"):
+            out.append("## " + line[3:].strip())
             i += 1
             continue
-        if line.startswith('h3#'):
-            result.append(f"### {line[3:].strip()}")
-            i += 1
-            continue
-
-        if line.startswith('p#'):
-            text = line[2:].strip()
-            result.append(text)
+        if line.startswith("h3#"):
+            out.append("### " + line[3:].strip())
             i += 1
             continue
 
-        if line.startswith('code#'):
-            lang = line[5:].strip() or 'text'
-            result.append(f"
-```{lang}")
+        if line.startswith("p#"):
+            out.append(line[2:].strip())
             i += 1
-            while i < len(lines) and not lines[i].strip().startswith('end#'):
-                result.append(lines[i])
+            continue
+
+        if line.startswith("code#"):
+            lang = line[5:].strip() or "text"
+            out.append("")
+            out.append("```" + lang)
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("end#"):
+                out.append(lines[i])
                 i += 1
-            result.append("```
-")
+            out.append("```")
+            out.append("")
             i += 1
             continue
 
-        if line.startswith('table#'):
-            headers = [h.strip() for h in line[6:].strip().split('|')]
-            result.append('| ' + ' | '.join(headers) + ' |')
-            result.append('|' + '|'.join(['---' for _ in headers]) + '|')
+        if line.startswith("table#"):
+            headers = [h.strip() for h in line[6:].split("|")]
+            out.append("| " + " | ".join(headers) + " |")
+            out.append("|" + "|".join(["---" for _ in headers]) + "|")
             i += 1
-            while i < len(lines) and not lines[i].strip().startswith('end#'):
+            while i < len(lines) and not lines[i].strip().startswith("end#"):
                 row = lines[i].strip()
                 if row:
-                    cells = [c.strip() for c in row.split('|')]
-                    result.append('| ' + ' | '.join(cells) + ' |')
+                    cells = [c.strip() for c in row.split("|")]
+                    out.append("| " + " | ".join(cells) + " |")
                 i += 1
-            result.append("")
+            out.append("")
             i += 1
             continue
 
-        if line.startswith('alert#'):
-            type_ = line[6:].strip()
-            emojis = {'info': 'ℹ️', 'warning': '⚠️', 'success': '✅', 'error': '❌', 'tip': '💡'}
-            emoji = emojis.get(type_, 'ℹ️')
+        if line.startswith("alert#"):
+            typ = line[6:].strip()
+            emojis = {"info":"ℹ️","warning":"⚠️","success":"✅","error":"❌","tip":"💡"}
+            emoji = emojis.get(typ, "ℹ️")
             text = ""
             if i + 1 < len(lines):
-                text = lines[i + 1].strip()
-                if text.startswith('p#'):
-                    text = text[2:].strip()
+                nxt = lines[i+1].strip()
+                if nxt.startswith("p#"):
+                    text = nxt[2:].strip()
                     i += 1
-            result.append(f"> **{emoji} {type_.upper()}**: {text}")
-            result.append("")
+            out.append("> **" + emoji + " " + typ.upper() + "**: " + text)
+            out.append("")
             i += 1
             continue
 
-        if line.startswith('list#'):
+        if line.startswith("list#"):
             i += 1
-            while i < len(lines) and not lines[i].strip().startswith('end#'):
-                item = lines[i].rstrip()
-                if item.strip().startswith('-'):
-                    result.append(item)
+            while i < len(lines) and not lines[i].strip().startswith("end#"):
+                item = lines[i].strip()
+                if item.startswith("-"):
+                    out.append(item)
                 i += 1
-            result.append("")
+            out.append("")
             i += 1
             continue
 
-        if line.startswith('card#'):
+        if line.startswith("card#"):
             title = line[5:].strip()
             desc = ""
-            if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
-                desc = lines[i + 1].strip()[5:].strip()
+            if i + 1 < len(lines) and lines[i+1].strip().startswith("desc#"):
+                desc = lines[i+1].strip()[5:].strip()
                 i += 1
-            result.append(f"**{title}**
-
-{desc}")
-            result.append("")
+            out.append("**" + title + "**")
+            out.append("")
+            out.append(desc)
+            out.append("")
             i += 1
             continue
 
-        if line.startswith('grid#'):
+        if line.startswith("grid#"):
             i += 1
-            while i < len(lines) and not lines[i].strip().startswith('end#'):
-                line_inner = lines[i].strip()
-                if line_inner.startswith('card#'):
-                    title = line_inner[5:].strip()
-                    desc = ""
-                    if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
-                        desc = lines[i + 1].strip()[5:].strip()
+            while i < len(lines) and not lines[i].strip().startswith("end#"):
+                inner = lines[i].strip()
+                if inner.startswith("card#"):
+                    t = inner[5:].strip()
+                    d = ""
+                    if i + 1 < len(lines) and lines[i+1].strip().startswith("desc#"):
+                        d = lines[i+1].strip()[5:].strip()
                         i += 1
-                    result.append(f"**{title}**
-
-{desc}")
-                    result.append("")
+                    out.append("**" + t + "**")
+                    out.append("")
+                    out.append(d)
+                    out.append("")
                 i += 1
             i += 1
             continue
 
-        if line.startswith('divider#'):
-            result.append("---")
-            result.append("")
+        if line.startswith("divider#"):
+            out.append("---")
+            out.append("")
             i += 1
             continue
 
-        if line.startswith('img#'):
-            parts = line[4:].strip().split('|')
+        if line.startswith("img#"):
+            parts = line[4:].split("|")
             src = parts[0].strip()
             alt = parts[1].strip() if len(parts) > 1 else ""
-            result.append(f"![{alt}]({src})")
-            result.append("")
+            out.append("![" + alt + "](" + src + ")")
+            out.append("")
             i += 1
             continue
 
         i += 1
 
-    # Build Jekyll frontmatter with sidebar as YAML list
-    frontmatter = ["---", f'title: "{title}"', "layout: doctor"]
+    # Frontmatter
+    fm = ["---", 'title: "' + title + '"', "layout: doctor"]
+    if sidebar:
+        fm.append("sidebar:")
+        for name, href in sidebar:
+            fm.append('  - name: "' + name + '"')
+            fm.append('    href: "' + href + '"')
+    fm.append("---")
+    fm.append("")
 
-    if sidebar_items:
-        frontmatter.append("sidebar:")
-        for item in sidebar_items:
-            frontmatter.append(f"  - name: "{item['name']}"")
-            frontmatter.append(f"    href: "{item['href']}"")
-
-    if nav_items:
-        frontmatter.append("nav:")
-        for item in nav_items:
-            frontmatter.append(f"  - name: "{item['name']}"")
-            frontmatter.append(f"    href: "{item['href']}"")
-
-    frontmatter.append("---
-")
-
-    return "
-".join(frontmatter + result)
+    return "\n".join(fm + out)
 
 
-def convert_all():
+def main():
     DOCS_DIR.mkdir(exist_ok=True)
     OUT_DIR.mkdir(exist_ok=True)
 
-    doctor_files = list(DOCS_DIR.glob('*.doctor'))
-    if not doctor_files:
-        default = DOCS_DIR / 'index.doctor'
-        default.write_text("""title# Welcome to Doctor
+    files = list(DOCS_DIR.glob("*.doctor"))
+    if not files:
+        default = DOCS_DIR / "index.doctor"
+        default.write_text('title# Welcome\n\nhero# Doctor\n desc# Your site is live.\n\nh2# Start Here\n\np# Edit docs/index.doctor to customize.\n', encoding="utf-8")
+        files = [default]
 
-hero# Doctor
- desc# Your documentation site is live.
+    for f in sorted(files):
+        print("Converting: " + f.name)
+        md = convert_file(f)
+        out = OUT_DIR / f.with_suffix(".md").name
+        out.write_text(md, encoding="utf-8")
+        print("  -> " + str(out))
 
-h2# Getting Started
+    idx = OUT_DIR / "index.md"
+    if idx.exists():
+        Path("index.md").write_text(idx.read_text(encoding="utf-8"), encoding="utf-8")
+        print("  -> copied to index.md")
 
-p# Edit `docs/index.doctor` to customize this page.
-
-alert#info
- p# This is a default page generated because no content was found.
-""")
-        doctor_files = [default]
-
-    for doctor_file in sorted(doctor_files):
-        print(f"Converting: {doctor_file.name}")
-        source = doctor_file.read_text(encoding='utf-8')
-        markdown = convert_doctor_to_markdown(source)
-
-        output_file = OUT_DIR / doctor_file.with_suffix('.md').name
-        output_file.write_text(markdown, encoding='utf-8')
-        print(f"  -> {output_file}")
-
-    index_md = OUT_DIR / 'index.md'
-    if index_md.exists():
-        root_index = Path('index.md')
-        root_index.write_text(index_md.read_text(encoding='utf-8'), encoding='utf-8')
-        print(f"  -> Copied to {root_index}")
+    print("Done.")
 
 
-if __name__ == '__main__':
-    convert_all()
-    print("
-Done. Markdown files ready for Jekyll.")
+if __name__ == "__main__":
+    main()
