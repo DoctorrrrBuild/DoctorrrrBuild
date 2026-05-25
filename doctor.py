@@ -187,10 +187,11 @@ def main():
         out.write_text(md, encoding="utf-8")
         print("  -> " + str(out))
 
-    idx = OUT_DIR / "index.md"
-    if idx.exists():
-        Path("index.md").write_text(idx.read_text(encoding="utf-8"), encoding="utf-8")
-        print("  -> copied to index.md")
+    # Copy ALL converted .md files to root so Jekyll sees them
+    for md_file in OUT_DIR.glob("*.md"):
+        dest = Path(md_file.name)
+        dest.write_text(md_file.read_text(encoding="utf-8"), encoding="utf-8")
+        print("  -> copied to " + str(dest))
 
     print("Done.")
 
