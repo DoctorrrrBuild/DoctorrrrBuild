@@ -58,6 +58,7 @@
         .nav-links {
             display: flex;
             gap: 1.5rem;
+            align-items: center;
         }
         .nav-links a {
             color: var(--text);
@@ -66,6 +67,18 @@
         }
         .nav-links a:hover {
             color: var(--primary);
+        }
+        .nav-links .showcase-btn {
+            background: var(--primary);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .nav-links .showcase-btn:hover {
+            background: #2563eb;
+            color: #fff;
         }
         .layout {
             display: flex;
@@ -191,6 +204,7 @@
             .sidebar { display: none; }
             .main { margin-left: 0; padding: 1rem; }
             .main h1 { font-size: 1.75rem; }
+            .nav-links .showcase-btn { display: none; }
         }
     </style>
 <base target="_blank">
@@ -201,6 +215,7 @@
         <div class="nav-links">
             <a href="{{ '/' | relative_url }}">Home</a>
             <a href="https://github.com">GitHub</a>
+            <a href="{{ '/showcase.html' | relative_url }}" class="showcase-btn">See Showcase</a>
         </div>
     </nav>
     <div class="layout">
