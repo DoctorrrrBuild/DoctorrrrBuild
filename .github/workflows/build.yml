@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,12 +29,7 @@ jobs:
           python-version: '3.11'
 
       - name: Convert Doctor to Markdown
-        run: |
-          python doctor.py
-          echo "=== Generated markdown ==="
-          ls -la _doctor_md/ || echo "No _doctor_md folder"
-          echo "=== Root index.md ==="
-          cat index.md | head -30 || echo "No index.md"
+        run: python doctor.py
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -45,9 +42,8 @@ jobs:
 
       - name: Verify output
         run: |
-          echo "=== _site contents ==="
           ls -la _site/
-          test -f _site/index.html && echo "✓ index.html exists" || (echo "✗ MISSING" && exit 1)
+          test -f _site/index.html && echo "OK" || exit 1
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
