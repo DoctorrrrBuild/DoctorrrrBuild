@@ -1,423 +1,228 @@
 #!/usr/bin/env python3
 """
-Doctor — Fail-Proof Documentation Compiler
+Doctor → Markdown converter
+Transforms .doctor files to .md for Jekyll/GitHub Pages
 """
 import re
 import sys
-import traceback
 from pathlib import Path
 
 DOCS_DIR = Path("docs")
-OUT_DIR = Path("_site")
+OUT_DIR = Path("_doctor_md")
 
-def log(msg):
-    print(msg, flush=True)
+def convert_doctor_to_markdown(source):
+    """Convert Doctor syntax to Markdown + Jekyll frontmatter."""
+    lines = source.split('\n')
+    result = []
+    i = 0
+    
+    title = "Documentation"
+    nav_items = []
+    sidebar_items = []
+    
+    while i < len(lines):
+        line = lines[i].rstrip()
+        
+        if not line.strip() or line.strip().startswith('//'):
+            i += 1
+            continue
+        
+        if line.startswith('title#'):
+            title = line[6:].strip()
+            i += 1
+            continue
+        
+        if line.startswith('nav#'):
+            parts = line[4:].strip().split('|')
+            if len(parts) == 2:
+                nav_items.append(f"- name: {parts[0].strip()}\n  href: {parts[1].strip()}")
+            i += 1
+            continue
+        
+        if line.startswith('sidebar#'):
+            parts = line[8:].strip().split('|')
+            if len(parts) == 2:
+                sidebar_items.append(f"- name: {parts[0].strip()}\n  href: {parts[1].strip()}")
+            i += 1
+            continue
+        
+        if line.startswith('hero#'):
+            hero_title = line[5:].strip()
+            desc = ""
+            if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
+                desc = lines[i + 1].strip()[5:].strip()
+                i += 1
+            result.append(f"# {hero_title}")
+            if desc:
+                result.append(f"\n> {desc}\n")
+            i += 1
+            continue
+        
+        if line.startswith('h1#'):
+            result.append(f"# {line[3:].strip()}")
+            i += 1
+            continue
+        if line.startswith('h2#'):
+            result.append(f"## {line[3:].strip()}")
+            i += 1
+            continue
+        if line.startswith('h3#'):
+            result.append(f"### {line[3:].strip()}")
+            i += 1
+            continue
+        
+        if line.startswith('p#'):
+            text = line[2:].strip()
+            result.append(text)
+            i += 1
+            continue
+        
+        if line.startswith('code#'):
+            lang = line[5:].strip() or 'text'
+            result.append(f"\n```{lang}")
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith('end#'):
+                result.append(lines[i])
+                i += 1
+            result.append("```\n")
+            i += 1
+            continue
+        
+        if line.startswith('table#'):
+            headers = [h.strip() for h in line[6:].strip().split('|')]
+            result.append('| ' + ' | '.join(headers) + ' |')
+            result.append('|' + '|'.join(['---' for _ in headers]) + '|')
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith('end#'):
+                row = lines[i].strip()
+                if row:
+                    cells = [c.strip() for c in row.split('|')]
+                    result.append('| ' + ' | '.join(cells) + ' |')
+                i += 1
+            result.append("")
+            i += 1
+            continue
+        
+        if line.startswith('alert#'):
+            type_ = line[6:].strip()
+            emojis = {'info': 'ℹ️', 'warning': '⚠️', 'success': '✅', 'error': '❌', 'tip': '💡'}
+            emoji = emojis.get(type_, 'ℹ️')
+            text = ""
+            if i + 1 < len(lines):
+                text = lines[i + 1].strip()
+                if text.startswith('p#'):
+                    text = text[2:].strip()
+                    i += 1
+            result.append(f"> **{emoji} {type_.upper()}**: {text}")
+            result.append("")
+            i += 1
+            continue
+        
+        if line.startswith('list#'):
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith('end#'):
+                item = lines[i].rstrip()
+                if item.strip().startswith('-'):
+                    result.append(item)
+                i += 1
+            result.append("")
+            i += 1
+            continue
+        
+        if line.startswith('card#'):
+            title = line[5:].strip()
+            desc = ""
+            if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
+                desc = lines[i + 1].strip()[5:].strip()
+                i += 1
+            result.append(f"**{title}**\n\n{desc}")
+            result.append("")
+            i += 1
+            continue
+        
+        if line.startswith('grid#'):
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith('end#'):
+                line_inner = lines[i].strip()
+                if line_inner.startswith('card#'):
+                    title = line_inner[5:].strip()
+                    desc = ""
+                    if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
+                        desc = lines[i + 1].strip()[5:].strip()
+                        i += 1
+                    result.append(f"**{title}**\n\n{desc}")
+                    result.append("")
+                i += 1
+            i += 1
+            continue
+        
+        if line.startswith('divider#'):
+            result.append("---")
+            result.append("")
+            i += 1
+            continue
+        
+        if line.startswith('img#'):
+            parts = line[4:].strip().split('|')
+            src = parts[0].strip()
+            alt = parts[1].strip() if len(parts) > 1 else ""
+            result.append(f"![{alt}]({src})")
+            result.append("")
+            i += 1
+            continue
+        
+        i += 1
+    
+    frontmatter = ["---", f'title: "{title}"', "layout: doctor"]
+    if nav_items:
+        frontmatter.append("nav:")
+        frontmatter.extend(["  " + n for n in nav_items])
+    if sidebar_items:
+        frontmatter.append("sidebar:")
+        frontmatter.extend(["  " + s for s in sidebar_items])
+    frontmatter.append("---\n")
+    
+    return "\n".join(frontmatter + result)
 
-DEFAULT_INDEX = """title# Welcome to Doctor
+
+def convert_all():
+    DOCS_DIR.mkdir(exist_ok=True)
+    OUT_DIR.mkdir(exist_ok=True)
+    
+    doctor_files = list(DOCS_DIR.glob('*.doctor'))
+    if not doctor_files:
+        default = DOCS_DIR / 'index.doctor'
+        default.write_text("""title# Welcome to Doctor
 
 hero# Doctor
- desc# Your documentation site is live. Edit docs/index.doctor to customize.
+ desc# Your documentation site is live.
 
 h2# Getting Started
 
-p# This default page was generated because no custom content was found. Replace docs/index.doctor with your own documentation.
+p# Edit `docs/index.doctor` to customize this page.
 
 alert#info
- p# Edit `docs/index.doctor` to customize this page.
-"""
-
-ERROR_PAGE = """title# Build Error
-
-hero# Something Went Wrong
- desc# The documentation build encountered an error.
-
-h2# Error Details
-
-p# Common causes: missing docs/ folder, no .doctor files, or syntax errors.
-
-alert#error
- p# Check your GitHub Actions logs for the full error message.
-"""
-
-
-class Doctor:
-    def __init__(self):
-        self.components = []
-        self.title = "Documentation"
-        self.nav_items = []
-        self.sidebar_items = []
-
-    def parse(self, source):
-        lines = source.split('\n')
-        i = 0
-        while i < len(lines):
-            line = lines[i].strip()
-            if not line or line.startswith('//'):
-                i += 1
-                continue
-
-            if line.startswith('title#'):
-                self.title = line[6:].strip()
-                i += 1
-                continue
-
-            if line.startswith('nav#'):
-                parts = line[4:].strip().split('|')
-                if len(parts) == 2:
-                    self.nav_items.append({'text': parts[0].strip(), 'href': parts[1].strip()})
-                i += 1
-                continue
-
-            if line.startswith('sidebar#'):
-                parts = line[8:].strip().split('|')
-                if len(parts) == 2:
-                    self.sidebar_items.append({'text': parts[0].strip(), 'href': parts[1].strip()})
-                i += 1
-                continue
-
-            if line.startswith('hero#'):
-                title = line[5:].strip()
-                desc = ""
-                if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
-                    desc = lines[i + 1].strip()[5:].strip()
-                    i += 1
-                self.components.append(self._hero(title, desc))
-                i += 1
-                continue
-
-            if line.startswith('h1#'):
-                self.components.append(self._heading(line[3:].strip(), 1))
-                i += 1
-                continue
-            if line.startswith('h2#'):
-                self.components.append(self._heading(line[3:].strip(), 2))
-                i += 1
-                continue
-            if line.startswith('h3#'):
-                self.components.append(self._heading(line[3:].strip(), 3))
-                i += 1
-                continue
-
-            if line.startswith('p#'):
-                text = line[2:].strip()
-                text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
-                text = re.sub(r'\*\*([^\*]+)\*\*', r'<strong>\1</strong>', text)
-                text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
-                text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', text)
-                self.components.append(f'<p>{text}</p>')
-                i += 1
-                continue
-
-            if line.startswith('code#'):
-                lang = line[5:].strip() or 'text'
-                code_lines = []
-                i += 1
-                while i < len(lines) and not lines[i].strip().startswith('end#'):
-                    code_lines.append(lines[i])
-                    i += 1
-                code_content = '\n'.join(code_lines)
-                code_content = code_content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                self.components.append(f'<pre><code class="language-{lang}">{code_content}</code></pre>')
-                i += 1
-                continue
-
-            if line.startswith('table#'):
-                headers = [h.strip() for h in line[6:].strip().split('|')]
-                rows = []
-                i += 1
-                while i < len(lines) and not lines[i].strip().startswith('end#'):
-                    row = lines[i].strip()
-                    if row:
-                        rows.append([c.strip() for c in row.split('|')])
-                    i += 1
-                self.components.append(self._table(headers, rows))
-                i += 1
-                continue
-
-            if line.startswith('alert#'):
-                type_ = line[6:].strip()
-                text = ""
-                if i + 1 < len(lines):
-                    text = lines[i + 1].strip()
-                    if text.startswith('p#'):
-                        text = text[2:].strip()
-                        i += 1
-                self.components.append(self._alert(type_, text))
-                i += 1
-                continue
-
-            if line.startswith('list#'):
-                items = []
-                i += 1
-                while i < len(lines) and not lines[i].strip().startswith('end#'):
-                    item = lines[i].strip()
-                    if item.startswith('-'):
-                        items.append(item[1:].strip())
-                    i += 1
-                self.components.append(self._list(items))
-                i += 1
-                continue
-
-            if line.startswith('card#'):
-                title = line[5:].strip()
-                desc = ""
-                if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
-                    desc = lines[i + 1].strip()[5:].strip()
-                    i += 1
-                self.components.append(self._card(title, desc))
-                i += 1
-                continue
-
-            if line.startswith('grid#'):
-                cols = int(line[5:].strip() or 2)
-                cards = []
-                i += 1
-                while i < len(lines) and not lines[i].strip().startswith('end#'):
-                    line_inner = lines[i].strip()
-                    if line_inner.startswith('card#'):
-                        card_title = line_inner[5:].strip()
-                        card_desc = ""
-                        if i + 1 < len(lines) and lines[i + 1].strip().startswith('desc#'):
-                            card_desc = lines[i + 1].strip()[5:].strip()
-                            i += 1
-                        cards.append({'title': card_title, 'desc': card_desc})
-                    i += 1
-                self.components.append(self._grid(cards, cols))
-                i += 1
-                continue
-
-            if line.startswith('divider#'):
-                self.components.append('<hr>')
-                i += 1
-                continue
-
-            if line.startswith('img#'):
-                parts = line[4:].strip().split('|')
-                src = parts[0].strip()
-                alt = parts[1].strip() if len(parts) > 1 else ""
-                self.components.append(f'<img src="{src}" alt="{alt}" style="max-width:100%;border-radius:8px;">')
-                i += 1
-                continue
-
-            i += 1
-
-        return self._build_html()
-
-    def _hero(self, title, desc):
-        return f'<div class="hero"><h1>{title}</h1><p>{desc}</p></div>'
-
-    def _heading(self, text, level):
-        anchor = re.sub(r'[^\w\s-]', '', text).strip().replace(' ', '-').lower()
-        return f'<h{level} id="{anchor}">{text}</h{level}>'
-
-    def _table(self, headers, rows):
-        ths = ''.join([f'<th>{h}</th>' for h in headers])
-        trs = ''
-        for row in rows:
-            tds = ''.join([f'<td>{c}</td>' for c in row])
-            trs += f'<tr>{tds}</tr>'
-        return f'<table><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>'
-
-    def _alert(self, type_, text):
-        icons = {'info': '&#8505;', 'warning': '&#9888;', 'success': '&#9989;', 'error': '&#10060;', 'tip': '&#128161;'}
-        icon = icons.get(type_, '&#8505;')
-        return f'<div class="alert alert-{type_}"><span class="alert-icon">{icon}</span><span>{text}</span></div>'
-
-    def _list(self, items):
-        lis = ''.join([f'<li>{item}</li>' for item in items])
-        return f'<ul>{lis}</ul>'
-
-    def _card(self, title, desc):
-        return f'<div class="card"><h3>{title}</h3><p>{desc}</p></div>'
-
-    def _grid(self, cards, cols):
-        cards_html = ''.join([self._card(c['title'], c['desc']) for c in cards])
-        return f'<div class="grid grid-cols-{cols}">{cards_html}</div>'
-
-    def _build_html(self):
-        nav_html = ''
-        if self.nav_items:
-            links = ''.join([f'<a href="{n["href"]}">{n["text"]}</a>' for n in self.nav_items])
-            nav_html = f'<nav class="top-nav"><div class="nav-brand">{self.title}</div><div class="nav-links">{links}</div></nav>'
-
-        sidebar_html = ''
-        if self.sidebar_items:
-            links = ''.join([f'<a href="{s["href"]}">{s["text"]}</a>' for s in self.sidebar_items])
-            sidebar_html = f'<aside class="sidebar"><div class="sidebar-content">{links}</div></aside>'
-
-        content = '\n'.join(self.components)
-
-        theme_css = """
-        :root { --bg: #ffffff; --text: #1a1a2e; --muted: #6b7280; --border: #e5e7eb; --primary: #3b82f6; --primary-light: #eff6ff; --code-bg: #f3f4f6; --sidebar-bg: #f9fafb; --card-bg: #ffffff; --shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        @media (prefers-color-scheme: dark) { :root { --bg: #0f172a; --text: #e2e8f0; --muted: #94a3b8; --border: #1e293b; --primary: #60a5fa; --primary-light: #1e293b; --code-bg: #1e293b; --sidebar-bg: #1e293b; --card-bg: #1e293b; --shadow: 0 1px 3px rgba(0,0,0,0.3); } }
-        """
-
-        css = f"""
-        <style>
-        {theme_css}
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }}
-        .top-nav {{ position: fixed; top: 0; left: 0; right: 0; height: 60px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; z-index: 100; }}
-        .nav-brand {{ font-weight: 700; font-size: 1.25rem; color: var(--primary); }}
-        .nav-links {{ display: flex; gap: 1.5rem; }}
-        .nav-links a {{ color: var(--text); text-decoration: none; font-size: 0.9rem; }}
-        .nav-links a:hover {{ color: var(--primary); }}
-        .layout {{ display: flex; min-height: 100vh; padding-top: 60px; }}
-        .sidebar {{ width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border); position: fixed; top: 60px; bottom: 0; left: 0; overflow-y: auto; }}
-        .sidebar-content {{ padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }}
-        .sidebar-content a {{ color: var(--muted); text-decoration: none; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.9rem; transition: all 0.2s; }}
-        .sidebar-content a:hover {{ background: var(--primary-light); color: var(--primary); }}
-        .main {{ flex: 1; margin-left: 260px; padding: 2rem 3rem; max-width: 900px; width: 100%; }}
-        .hero {{ padding: 3rem 0; margin-bottom: 2rem; border-bottom: 1px solid var(--border); }}
-        .hero h1 {{ font-size: 2.5rem; margin-bottom: 1rem; }}
-        .hero p {{ font-size: 1.25rem; color: var(--muted); max-width: 600px; }}
-        h1, h2, h3 {{ margin: 2rem 0 1rem; font-weight: 600; }}
-        h1 {{ font-size: 2rem; }} h2 {{ font-size: 1.5rem; }} h3 {{ font-size: 1.25rem; }}
-        p {{ margin-bottom: 1rem; color: var(--text); }}
-        a {{ color: var(--primary); }}
-        code {{ background: var(--code-bg); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Monaco', 'Consolas', monospace; font-size: 0.9em; }}
-        pre {{ background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); }}
-        pre code {{ background: none; padding: 0; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--card-bg); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }}
-        th, td {{ padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }}
-        th {{ background: var(--sidebar-bg); font-weight: 600; font-size: 0.9rem; }}
-        tr:hover {{ background: var(--primary-light); }}
-        .alert {{ padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; display: flex; align-items: center; gap: 0.75rem; border: 1px solid var(--border); }}
-        .alert-info {{ background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }}
-        .alert-warning {{ background: #fffbeb; border-color: #fde68a; color: #92400e; }}
-        .alert-success {{ background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }}
-        .alert-error {{ background: #fef2f2; border-color: #fecaca; color: #991b1b; }}
-        .alert-tip {{ background: #faf5ff; border-color: #e9d5ff; color: #6b21a8; }}
-        ul {{ margin: 1rem 0; padding-left: 1.5rem; }}
-        li {{ margin: 0.5rem 0; }}
-        .grid {{ display: grid; gap: 1rem; margin: 1.5rem 0; }}
-        .grid-cols-2 {{ grid-template-columns: repeat(2, 1fr); }}
-        .grid-cols-3 {{ grid-template-columns: repeat(3, 1fr); }}
-        .grid-cols-4 {{ grid-template-columns: repeat(4, 1fr); }}
-        .card {{ background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; box-shadow: var(--shadow); }}
-        .card h3 {{ margin: 0 0 0.5rem; font-size: 1.1rem; }}
-        .card p {{ margin: 0; color: var(--muted); font-size: 0.9rem; }}
-        hr {{ border: none; border-top: 1px solid var(--border); margin: 2rem 0; }}
-        img {{ max-width: 100%; height: auto; }}
-        @media (max-width: 768px) {{ .sidebar {{ display: none; }} .main {{ margin-left: 0; padding: 1rem; }} .grid-cols-2, .grid-cols-3, .grid-cols-4 {{ grid-template-columns: 1fr; }} }}
-        </style>
-        """
-
-        return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{self.title}</title>
-    {css}
-</head>
-<body>
-    {nav_html}
-    <div class="layout">
-        {sidebar_html}
-        <main class="main">
-            {content}
-        </main>
-    </div>
-</body>
-</html>"""
-
-
-def compile_all():
-    log("=" * 50)
-    log("Doctor Build Starting")
-    log(f"Python: {sys.version}")
-    log(f"Working dir: {Path.cwd()}")
-    log(f"Docs dir: {DOCS_DIR.absolute()}")
-    log(f"Output dir: {OUT_DIR.absolute()}")
-
-    # Ensure docs/ exists
-    if not DOCS_DIR.exists():
-        log("WARNING: docs/ not found. Creating...")
-        DOCS_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Ensure at least one .doctor file
-    doctor_files = list(DOCS_DIR.glob('*.doctor'))
-    if not doctor_files:
-        log("WARNING: No .doctor files. Creating default index.doctor...")
-        default_file = DOCS_DIR / 'index.doctor'
-        with open(default_file, 'w', encoding='utf-8') as f:
-            f.write(DEFAULT_INDEX)
-        doctor_files = [default_file]
-
-    # Create output dir
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Compile files
-    compiled = []
+ p# This is a default page generated because no content was found.
+""")
+        doctor_files = [default]
+    
     for doctor_file in sorted(doctor_files):
-        log(f"Compiling: {doctor_file.name}")
-        try:
-            with open(doctor_file, 'r', encoding='utf-8') as f:
-                source = f.read()
-            compiler = Doctor()
-            html = compiler.parse(source)
-            output_file = OUT_DIR / doctor_file.with_suffix('.html').name
-            with open(output_file, 'w', encoding='utf-8') as f:
-                f.write(html)
-            log(f"  -> OK: {output_file.name}")
-            compiled.append(output_file)
-        except Exception as e:
-            log(f"  -> FAILED: {e}")
-            traceback.print_exc()
-
-    # CRITICAL: Ensure index.html exists
-    index_html = OUT_DIR / 'index.html'
-    if not index_html.exists():
-        log("CRITICAL: index.html missing. Creating fallback...")
-        # Try index.doctor
-        index_doctor = DOCS_DIR / 'index.doctor'
-        if index_doctor.exists():
-            try:
-                with open(index_doctor, 'r', encoding='utf-8') as f:
-                    source = f.read()
-                compiler = Doctor()
-                html = compiler.parse(source)
-                with open(index_html, 'w', encoding='utf-8') as f:
-                    f.write(html)
-                log("  -> OK: Created from index.doctor")
-                compiled.append(index_html)
-            except Exception as e:
-                log(f"  -> index.doctor failed: {e}")
-
-        # Copy any other HTML
-        if not index_html.exists():
-            others = sorted(OUT_DIR.glob('*.html'))
-            if others:
-                with open(others[0], 'r', encoding='utf-8') as f:
-                    content = f.read()
-                with open(index_html, 'w', encoding='utf-8') as f:
-                    f.write(content)
-                log(f"  -> OK: Copied from {others[0].name}")
-
-        # Last resort: error page
-        if not index_html.exists():
-            compiler = Doctor()
-            html = compiler.parse(ERROR_PAGE)
-            with open(index_html, 'w', encoding='utf-8') as f:
-                f.write(html)
-            log("  -> OK: Created error page")
-            compiled.append(index_html)
-
-    # Verify non-empty
-    if index_html.exists() and index_html.stat().st_size == 0:
-        log("ERROR: index.html is empty! Regenerating...")
-        compiler = Doctor()
-        html = compiler.parse(ERROR_PAGE)
-        with open(index_html, 'w', encoding='utf-8') as f:
-            f.write(html)
-
-    log("=" * 50)
-    log(f"Done. Compiled: {len(compiled)} files")
-    if OUT_DIR.exists():
-        log(f"Output: {[f.name for f in OUT_DIR.iterdir()]}")
-    return 0
+        print(f"Converting: {doctor_file.name}")
+        source = doctor_file.read_text(encoding='utf-8')
+        markdown = convert_doctor_to_markdown(source)
+        
+        output_file = OUT_DIR / doctor_file.with_suffix('.md').name
+        output_file.write_text(markdown, encoding='utf-8')
+        print(f"  -> {output_file}")
+    
+    # Copy index.md to root for Jekyll
+    index_md = OUT_DIR / 'index.md'
+    if index_md.exists():
+        root_index = Path('index.md')
+        root_index.write_text(index_md.read_text(encoding='utf-8'), encoding='utf-8')
+        print(f"  -> Copied to {root_index}")
 
 
 if __name__ == '__main__':
-    sys.exit(compile_all())
+    convert_all()
+    print("\nDone. Markdown files ready for Jekyll.")
