@@ -23,6 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Convert Doctor to Markdown
+        run: python doctor.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
@@ -35,8 +43,7 @@ jobs:
       - name: Copy optician landing page
         run: |
           mkdir -p _site
-          cp optician.html _site/index.html 2>/dev/null || echo "No optician.html found"
-          ls -la _site/
+          cp index.html _site/index.html 2>/dev/null || echo "No index.html found"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
