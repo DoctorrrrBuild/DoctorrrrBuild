@@ -193,6 +193,7 @@
             .main h1 { font-size: 1.75rem; }
         }
     </style>
+<base target="_blank">
 </head>
 <body>
     <nav class="top-nav">
@@ -204,9 +205,15 @@
     </nav>
     <div class="layout">
         <aside class="sidebar">
-            {% for item in page.sidebar %}
-                <a href="{{ item.href }}">{{ item.name }}</a>
-            {% endfor %}
+            {% if page.sidebar %}
+                {% for item in page.sidebar %}
+                    <a href="{{ item.href }}">{{ item.name }}</a>
+                {% endfor %}
+            {% else %}
+                <a href="#">Getting Started</a>
+                <a href="#">Components</a>
+                <a href="#">Examples</a>
+            {% endif %}
         </aside>
         <main class="main">
             {{ content }}
