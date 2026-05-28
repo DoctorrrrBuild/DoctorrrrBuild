@@ -29,7 +29,7 @@ jobs:
           python-version: '3.11'
 
       - name: Convert Doctor to Markdown
-        run: python doctor.py || echo "Doctor conversion skipped"
+        run: python doctor.py
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -40,11 +40,14 @@ jobs:
           source: .
           destination: ./_site
 
-      - name: Ensure root index.html exists
+      - name: Ensure docs folder exists in output
         run: |
-          mkdir -p _site
-          cp index.html _site/index.html 2>/dev/null || echo "No index.html found"
-          ls -la _site/ || echo "No _site directory"
+          ls -la _site/ || echo "No _site yet"
+          if [ -d docs ]; then
+            mkdir -p _site/docs
+            cp -r docs/* _site/docs/ 2>/dev/null || true
+          fi
+          ls -la _site/docs/ 2>/dev/null || echo "No docs folder in _site"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
